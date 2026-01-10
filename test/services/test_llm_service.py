@@ -16,7 +16,7 @@ async def gemini_llm_service() -> LLMService:
     gemini_model = get_gemini_llm()
     return LLMService(llm=gemini_model)
 
-@pytest.mark.skip(reason="Skipping E2E test that requires external network access and can be flaky.")
+# @pytest.mark.skip(reason="Skipping E2E test that requires external network access and can be flaky.")
 async def test_gemini_ainvoke_e2e(gemini_llm_service: LLMService):
     """
     End-to-end test for the LLMService.ainvoke() method using the real Gemini model.

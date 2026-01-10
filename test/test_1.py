@@ -3,3 +3,4 @@ from loguru import logger
 
 def test_hello():
     logger.info("test hello!")
+    print("test hello!" )

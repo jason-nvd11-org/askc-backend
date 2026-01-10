@@ -31,7 +31,7 @@ async def new_conversation(db_session: AsyncSession):
     conversation = await conversation_dao.create_conversation(db_session, conv=conv_create)
     return conversation
 
-@pytest.mark.skip(reason="Skipping E2E test that requires external network access and can be flaky.")
+# @pytest.mark.skip(reason="Skipping E2E test that requires external network access and can be flaky.")
 async def test_stream_chat_response_gemini_e2e(db_session: AsyncSession, new_conversation):
     """
     End-to-end test for the stream_chat_response function using the Gemini model.
