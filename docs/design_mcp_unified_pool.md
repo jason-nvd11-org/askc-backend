@@ -26,7 +26,7 @@ graph TD
     end
     
     Service -->|Get Tools| Manager
-    Service -->|Bind All Tools| LLM[Smart LLM (Gemini/DeepSeek)]
+    Service -->|Bind All Tools| LLM["Smart LLM (Gemini/DeepSeek)"]
     
     LLM -->|Decision: Call Tool?| Decision{Is Tool Needed?}
     Decision -->|Yes: get_repo_list| Manager
