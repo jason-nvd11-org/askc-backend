@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+      "mcp_github_tools": {
+        "autoApprove": [
+          "get_repo_list"
+        ],
+        "disabled": false,
+        "timeout": 60,
+        "type": "sse",
+        "url": "https://www.jpgcp.cloud/mcp-github-tools-svc/mcp/sse",
+        "headers": {
+          "X-Github-Token": "${GITHUB_TOKEN}"
+        }
+      }
+    }
+  }

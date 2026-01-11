@@ -4,7 +4,7 @@ from loguru import logger
 from typing import AsyncIterator
 from langchain_core.messages import BaseMessageChunk
 
-class LLMService:
+class ccccc:
     def __init__(self, llm: BaseChatModel):
         """Initializes the LLMService with a specific language model.
 
