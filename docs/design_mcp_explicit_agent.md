@@ -14,7 +14,7 @@
 graph TD
     User[前端用户] -->|"POST /chat {agent: 'github'}"| Router[Chat Router]
     Router --> Service[Chat Service]
-    Service -->|Switch(agent_type)| Factory[Agent Factory]
+    Service -->|"Switch(agent_type)"| Factory[Agent Factory]
     
     Factory -->|agent='github'| GithubAgent[Github Agent]
     Factory -->|agent='jira'| JiraAgent[Jira Agent]
