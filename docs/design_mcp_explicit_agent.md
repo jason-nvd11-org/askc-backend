@@ -26,7 +26,7 @@ graph TD
         GA_LLM[Gemini Chat Model]
     end
     
-    GithubAgent -->|Connect & List Tools| MCP_Server[MCP Server (GitHub)]
+    GithubAgent -->|Connect & List Tools| MCP_Server["MCP Server (GitHub)"]
     GithubAgent -->|Bind Tools| GA_LLM
     
     GA_LLM -->|Function Call| MCP_Server

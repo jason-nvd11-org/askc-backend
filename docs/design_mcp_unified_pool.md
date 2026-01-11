@@ -17,8 +17,8 @@ graph TD
     
     subgraph Tool Infrastructure
         Manager[McpToolManager]
-        MCP1[MCP Server (GitHub)]
-        MCP2[MCP Server (Jira)]
+        MCP1["MCP Server (GitHub)"]
+        MCP2["MCP Server (Jira)"]
         
         Manager -->|Connect| MCP1
         Manager -->|Connect| MCP2
