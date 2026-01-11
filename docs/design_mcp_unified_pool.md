@@ -12,7 +12,7 @@ LLM 充当“大脑”，根据用户的自然语言输入，**自主判断**是
 
 ```mermaid
 graph TD
-    User[前端用户] -->|POST /chat {message: '...'}| Router[Chat Router]
+    User[前端用户] -->|"POST /chat {message: '...'}"| Router[Chat Router]
     Router --> Service[Chat Service]
     
     subgraph Tool Infrastructure

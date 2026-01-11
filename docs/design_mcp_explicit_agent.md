@@ -12,7 +12,7 @@
 
 ```mermaid
 graph TD
-    User[前端用户] -->|POST /chat {agent: 'github'}| Router[Chat Router]
+    User[前端用户] -->|"POST /chat {agent: 'github'}"| Router[Chat Router]
     Router --> Service[Chat Service]
     Service -->|Switch(agent_type)| Factory[Agent Factory]
     
