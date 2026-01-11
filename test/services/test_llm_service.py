@@ -39,3 +39,41 @@ async def test_gemini_ainvoke_e2e(gemini_llm_service: LLMService):
     assert isinstance(response, AIMessage), "Response should be an instance of AIMessage."
     assert response.content, "Response content should not be empty."
     assert len(response.content) > 5, "Response content should have a reasonable length."
+
+async def test_gemini_astream_e2e(gemini_llm_service: LLMService):
+    """
+    End-to-end test for the LLMService.astream() method using the real Gemini model.
+    """
+    # 1. Prepare the prompt
+    prompt = "Count from 1 to 1000. Just the numbers."
+
+    # 2. Call the astream method
+    full_response = ""
+    chunk_count = 0
+    
+    print(f"\n--- Gemini Stream Response ---")
+    try:
+        async for chunk in gemini_llm_service.astream(prompt):
+            chunk_count += 1
+            content = chunk.content
+            # Print each chunk as it arrives
+            print(content, end="", flush=True)
+            if isinstance(content, str):
+                full_response += content
+            
+            # Assertions per chunk
+            assert content is not None
+            # chunk.type should be 'ai' if it's AIMessageChunk, but BaseMessageChunk type hinting might hide it
+            # We can check if it has 'type' attribute
+            if hasattr(chunk, 'type'):
+                assert chunk.type == 'AIMessageChunk' or chunk.type == 'ai'
+
+    except Exception as e:
+        pytest.fail(f"LLMService.astream() failed with an exception: {e}")
+    print(f"\n------------------------------")
+
+    # 3. Final Assertions
+    assert chunk_count > 0, "Should receive at least one chunk."
+    assert full_response, "Full response should not be empty."
+    assert "1" in full_response
+    assert "5" in full_response
