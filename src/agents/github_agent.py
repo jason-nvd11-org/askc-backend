@@ -1,11 +1,12 @@
 import os
+import httpx
 from typing import AsyncIterator, Any, List, Dict
 from loguru import logger
 from langchain_core.messages import BaseMessageChunk, SystemMessage, HumanMessage, AIMessageChunk, ToolMessage
 from langchain_core.tools import Tool, StructuredTool
 from pydantic import create_model, Field
 
-from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamable_http_client
 from mcp.client.session import ClientSession
 from mcp.types import CallToolResult, Tool as McpTool
 
@@ -113,32 +114,34 @@ class GithubAgent(BaseAgent):
         logger.info(f"Connecting to GitHub MCP at {self.url}...")
         
         try:
-            async with sse_client(url=self.url, headers=self.headers) as (read, write):
-                async with ClientSession(read, write) as session:
-                    # 1. Handshake
-                    logger.info("MCP Session initialized.")
-                    init_result = await session.initialize()
-                    
-                    # 2. Get Instructions
-                    server_instructions = self._extract_instructions(init_result)
+            async with httpx.AsyncClient(headers=self.headers, timeout=60.0) as client:
+                async with streamable_http_client(url=self.url, http_client=client) as (read, write, _):
+                    async with ClientSession(read, write) as session:
+                        # 1. Handshake
+                        logger.info("Initializing MCP Session...")
+                        init_result = await session.initialize()
+                        logger.info("MCP Session initialized.")
+                        
+                        # 2. Get Instructions
+                        server_instructions = self._extract_instructions(init_result)
 
-                    # 3. Get Tools
-                    mcp_tools = await self._fetch_mcp_tools(session)
-                    langchain_tools = self._convert_mcp_tools(mcp_tools, session)
+                        # 3. Get Tools
+                        mcp_tools = await self._fetch_mcp_tools(session)
+                        langchain_tools = self._convert_mcp_tools(mcp_tools, session)
 
-                    # 4. Prepare LLM
-                    llm_with_tools = self.llm_service.llm.bind_tools(langchain_tools)
-                    
-                    # 5. Build Context
-                    full_system_prompt = self.system_prompt + server_instructions
-                    messages = [
-                        SystemMessage(content=full_system_prompt),
-                        HumanMessage(content=input_text)
-                    ]
-                    
-                    # 6. Execute Loop
-                    async for chunk in self._agent_loop(llm_with_tools, session, messages):
-                        yield chunk
+                        # 4. Prepare LLM
+                        llm_with_tools = self.llm_service.llm.bind_tools(langchain_tools)
+                        
+                        # 5. Build Context
+                        full_system_prompt = self.system_prompt + server_instructions
+                        messages = [
+                            SystemMessage(content=full_system_prompt),
+                            HumanMessage(content=input_text)
+                        ]
+                        
+                        # 6. Execute Loop
+                        async for chunk in self._agent_loop(llm_with_tools, session, messages):
+                            yield chunk
 
         except Exception as e:
             logger.error(f"Error in GithubAgent: {e}")

@@ -63,12 +63,12 @@ graph TD
 - [ ] **Interface**: 定义 `src/agents/base.py`。
 
 ### Phase 2: 实现专家代理
-- [ ] **GithubAgent**: 创建 `src/agents/github_agent.py`，实现 MCP 连接和工具绑定。
-- [ ] **ChatAgent**: 创建 `src/agents/chat_agent.py`，实现基础对话逻辑。
+- [x] **GithubAgent**: 创建 `src/agents/github_agent.py`，实现 MCP 连接和工具绑定。 (已完成)
+- [ ] **ChatAgent**: 原计划独立创建，现决定将其通用对话能力合并到 **MainAgent** 中实现。 (已变更)
 
 ### Phase 3: 实现路由层
-- [ ] **Router**: 创建 `src/services/intent_router.py`，实现意图分类逻辑。
-- [ ] **Integration**: 修改 `ChatService`，先调用 Router 获取意图，再分发给对应 Agent。
+- [ ] **MainAgent**: 创建 `src/agents/main_agent.py`，负责通用对话与路由 (Hand-off)。
+- [ ] **Integration**: 修改 `ChatService`，集成 `MainAgent` 并接管 `GithubAgent` 的调用。
 
 ### Phase 4: 验证
 - [ ] **Test**: 编写测试用例，验证 "你好" 路由到 ChatAgent，"列出 repo" 路由到 GithubAgent。
