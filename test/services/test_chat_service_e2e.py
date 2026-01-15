@@ -1,6 +1,6 @@
 import pytest
 import json
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.services import chat_service
 from src.schemas.chat import ChatRequest
@@ -9,7 +9,7 @@ from src.llm.gemini_chat_model import get_gemini_llm
 from src.services.llm_service import LLMService
 from src.agents.github_react_agent import GithubReactAgent
 from src.agents.main_agent import MainAgent
-from src.configs.db import get_db_session, get_async_engine
+from src.configs.db import DATABASE_URL, get_async_engine
 from src.dao import conversation_dao
 from src.schemas.conversation import ConversationCreateSchema
 
@@ -19,21 +19,27 @@ pytestmark = pytest.mark.asyncio
 @pytest.fixture
 async def db_session():
     """Fixture to provide a real database session."""
-    # 1. Clear cache at start to force new engine creation for this test's loop
+    # Clear the cache to ensure we get a new engine bound to the current event loop
+    # This fixes the "Event loop is closed" error when running multiple async tests
     get_async_engine.cache_clear()
     
-    session_generator = get_db_session()
-    session = await anext(session_generator)
-    try:
-        yield session
-    finally:
-        await session.close()
-        # 2. Cleanup: Get the engine created for this test and dispose it
-        # This ensures connections are closed before the loop is closed by pytest
-        current_engine = get_async_engine()
-        await current_engine.dispose()
-        # 3. Clear cache again to be safe
-        get_async_engine.cache_clear()
+    # Create a new engine bound to the current event loop
+    engine = create_async_engine(DATABASE_URL, pool_pre_ping=True, echo=False)
+    
+    # Create a new session factory with the new engine
+    AsyncSessionFactory = async_sessionmaker(
+        bind=engine,
+        expire_on_commit=False,
+    )
+    
+    async with AsyncSessionFactory() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+    
+    # Dispose the engine after use
+    await engine.dispose()
 
 @pytest.fixture
 async def new_conversation(db_session: AsyncSession):

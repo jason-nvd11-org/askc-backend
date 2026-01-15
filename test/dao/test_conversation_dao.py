@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 # Ensure config is loaded before other imports
 import src.configs.config
-from src.configs.db import DATABASE_URL
+from src.configs.db import DATABASE_URL, get_async_engine
 from src.models.tables import metadata
 from src.schemas.user import UserCreateSchema
 from src.schemas.conversation import ConversationCreateSchema
@@ -15,6 +15,10 @@ async def managed_db_session():
     """
     A fixture that provides a clean database and a session for each test.
     """
+    # Clear the cache to ensure we get a new engine bound to the current event loop
+    # This fixes the "Event loop is closed" error when running multiple async tests
+    get_async_engine.cache_clear()
+    
     engine = create_async_engine(DATABASE_URL)
     async with engine.begin() as conn:
         await conn.run_sync(metadata.drop_all)
