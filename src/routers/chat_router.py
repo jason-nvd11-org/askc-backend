@@ -15,6 +15,8 @@ from src.configs.db import get_db_session
 from src.schemas.chat import ChatRequest, PureChatRequest
 from src.services import chat_service
 from src.dao import conversation_dao
+from src.agents.main_agent import MainAgent
+from src.agents.github_react_agent import GithubReactAgent
 
 from src.routers.dependencies import validate_token_and_get_user
 
@@ -54,13 +56,21 @@ async def chat(
             raise HTTPException(status_code=400, detail=f"Invalid model '{request.model}'. Please use 'gemini' or 'deepseek'.")
         
         llm_service = LLMService(llm=llm)
+        
+        # Initialize the Agent
+        github_agent = GithubReactAgent(llm_service=llm_service)
+        # Note: We are initializing the agent for every request here. 
+        # In production, this might be optimized or cached, but for now it ensures freshness.
+        await github_agent.initialize()
+        
+        main_agent = MainAgent(llm_service=llm_service, github_agent=github_agent)
 
     except Exception as e:
-        logger.error(f"Failed to initialize LLM service for request: {e}")
-        raise HTTPException(status_code=500, detail="Failed to initialize LLM service.")
+        logger.error(f"Failed to initialize Agent/LLM service for request: {e}")
+        raise HTTPException(status_code=500, detail="Failed to initialize Agent/LLM service.")
 
     return StreamingResponse(
-        chat_service.stream_chat_response(request, llm_service, db),
+        chat_service.stream_chat_response(request, main_agent, db),
         media_type="text/event-stream"
     )
 

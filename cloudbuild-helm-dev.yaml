@@ -72,6 +72,7 @@ steps:
           --from-literal=DB_PASSWORD="$$(gcloud secrets versions access latest --secret=db-pass-nvd11 --project=$PROJECT_ID)" \
           --from-literal=GEMINI_API_KEY="$$(gcloud secrets versions access latest --secret=gemini-api-key --project=$PROJECT_ID)" \
           --from-literal=DEEPSEEK_API_KEY="$$(gcloud secrets versions access latest --secret=deepseek-api-key --project=$PROJECT_ID)" \
+          --from-literal=MCP_GITHUB_TOKEN="$$(gcloud secrets versions access latest --secret=github-token-nvd11 --project=$PROJECT_ID)" \
           --dry-run=client -o yaml | kubectl apply -f -
         
         # Fetch the Auth0 Client ID for docs from Secret Manager

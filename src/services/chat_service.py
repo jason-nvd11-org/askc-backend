@@ -155,7 +155,6 @@ async def stream_chat_response(
                 return
         
         logger.info("Streaming finished.")
-        yield "data: [DONE]\n\n"
         
         # 5. Save assistant's full response
         if full_response_content:
@@ -167,6 +166,8 @@ async def stream_chat_response(
             )
             await message_dao.create_message(db, message=assistant_message_to_save)
             response_saved = True
+
+        yield "data: [DONE]\n\n"
 
     except asyncio.CancelledError:
         logger.warning(f"Stream cancelled (client disconnected) for conversation {request.conversation_id}, partial response length={len(full_response_content)}")
