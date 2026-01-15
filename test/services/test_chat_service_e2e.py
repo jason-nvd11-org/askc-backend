@@ -7,7 +7,9 @@ from src.schemas.chat import ChatRequest
 from src.llm.deepseek_chat_model import get_deepseek_llm
 from src.llm.gemini_chat_model import get_gemini_llm
 from src.services.llm_service import LLMService
-from src.configs.db import get_db_session
+from src.agents.github_react_agent import GithubReactAgent
+from src.agents.main_agent import MainAgent
+from src.configs.db import get_db_session, get_async_engine
 from src.dao import conversation_dao
 from src.schemas.conversation import ConversationCreateSchema
 
@@ -17,12 +19,21 @@ pytestmark = pytest.mark.asyncio
 @pytest.fixture
 async def db_session():
     """Fixture to provide a real database session."""
+    # 1. Clear cache at start to force new engine creation for this test's loop
+    get_async_engine.cache_clear()
+    
     session_generator = get_db_session()
     session = await anext(session_generator)
     try:
         yield session
     finally:
         await session.close()
+        # 2. Cleanup: Get the engine created for this test and dispose it
+        # This ensures connections are closed before the loop is closed by pytest
+        current_engine = get_async_engine()
+        await current_engine.dispose()
+        # 3. Clear cache again to be safe
+        get_async_engine.cache_clear()
 
 @pytest.fixture
 async def new_conversation(db_session: AsyncSession):
@@ -39,6 +50,11 @@ async def test_stream_chat_response_gemini_e2e(db_session: AsyncSession, new_con
     model_name = "gemini"
     llm = get_gemini_llm()
     llm_service = LLMService(llm=llm)
+    
+    github_agent = GithubReactAgent(llm_service=llm_service)
+    # Initialize agent (optional for general chat but good practice)
+    await github_agent.initialize()
+    main_agent = MainAgent(llm_service=llm_service, github_agent=github_agent)
 
     request = ChatRequest(
         conversation_id=new_conversation['id'],
@@ -47,7 +63,7 @@ async def test_stream_chat_response_gemini_e2e(db_session: AsyncSession, new_con
     )
 
     full_response = ""
-    stream_generator = chat_service.stream_chat_response(request, llm_service, db_session)
+    stream_generator = chat_service.stream_chat_response(request, main_agent, db_session)
     
     print(f"\n--- Streaming Response for {model_name.upper()} ---")
     try:
@@ -82,6 +98,10 @@ async def test_stream_chat_response_deepseek_e2e(db_session: AsyncSession, new_c
     llm = get_deepseek_llm()
     llm_service = LLMService(llm=llm)
 
+    github_agent = GithubReactAgent(llm_service=llm_service)
+    await github_agent.initialize()
+    main_agent = MainAgent(llm_service=llm_service, github_agent=github_agent)
+
     request = ChatRequest(
         conversation_id=new_conversation['id'],
         message=f"Hello, {model_name}! In one sentence, tell me what you are.",
@@ -89,7 +109,7 @@ async def test_stream_chat_response_deepseek_e2e(db_session: AsyncSession, new_c
     )
 
     full_response = ""
-    stream_generator = chat_service.stream_chat_response(request, llm_service, db_session)
+    stream_generator = chat_service.stream_chat_response(request, main_agent, db_session)
     
     print(f"\n--- Streaming Response for {model_name.upper()} ---")
     try:

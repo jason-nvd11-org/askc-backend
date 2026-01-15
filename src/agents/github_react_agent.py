@@ -2,7 +2,8 @@ import json
 import re
 from typing import AsyncIterator, Any, List
 from loguru import logger
-from langchain_core.messages import BaseMessageChunk, SystemMessage, HumanMessage, AIMessageChunk, ToolMessage
+from typing import Optional
+from langchain_core.messages import BaseMessageChunk, SystemMessage, HumanMessage, AIMessageChunk, ToolMessage, BaseMessage
 from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 import httpx
@@ -101,24 +102,26 @@ class GithubReactAgent(ToolCallableAgent):
             # 4. Observe
             messages.append(HumanMessage(content=f"Tool Output: {tool_result}"))
 
-    def astream(self, input: str) -> AsyncIterator[BaseMessageChunk]:
-        return self._astream_impl(input)
+    def astream(self, input: str, chat_history: Optional[List[BaseMessage]] = None) -> AsyncIterator[BaseMessageChunk]:
+        return self._astream_impl(input, chat_history)
 
-    async def _astream_impl(self, input: str) -> AsyncIterator[BaseMessageChunk]:
+    async def _astream_impl(self, input: str, chat_history: Optional[List[BaseMessage]] = None) -> AsyncIterator[BaseMessageChunk]:
         await self.ensure_initialized()
         
         full_system_prompt = f"{self.base_system_prompt}\n{getattr(self, 'instructions', '')}\n\n{getattr(self, 'tool_definitions', '')}"
         
-        messages = [
-            SystemMessage(content=full_system_prompt),
-            HumanMessage(content=input)
-        ]
+        messages: List[BaseMessage] = [SystemMessage(content=full_system_prompt)]
+        
+        if chat_history:
+            messages.extend(chat_history)
+            
+        messages.append(HumanMessage(content=input))
         
         async for chunk in self._agent_loop(messages):
             yield chunk
             
-    async def ainvoke(self, input: str) -> Any:
+    async def ainvoke(self, input: str, chat_history: Optional[List[BaseMessage]] = None) -> Any:
         chunks = []
-        async for chunk in self.astream(input):
+        async for chunk in self.astream(input, chat_history):
             chunks.append(chunk)
         return "".join([c.content for c in chunks if isinstance(c.content, str)])

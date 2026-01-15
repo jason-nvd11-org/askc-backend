@@ -1,8 +1,8 @@
 import os
 import httpx
-from typing import AsyncIterator, Any, List, Dict
+from typing import AsyncIterator, Any, List, Dict, Optional
 from loguru import logger
-from langchain_core.messages import BaseMessageChunk, SystemMessage, HumanMessage, AIMessageChunk, ToolMessage
+from langchain_core.messages import BaseMessageChunk, SystemMessage, HumanMessage, AIMessageChunk, ToolMessage, BaseMessage
 from langchain_core.tools import Tool, StructuredTool
 from pydantic import create_model, Field
 
@@ -147,11 +147,12 @@ class GithubAgent(BaseAgent):
             logger.error(f"Error in GithubAgent: {e}")
             yield AIMessageChunk(content=f"Error executing GitHub Agent: {str(e)}")
 
-    async def ainvoke(self, input: str) -> Any:
+    async def ainvoke(self, input: str, chat_history: Optional[List[BaseMessage]] = None) -> Any:
+        # For simplicity, just collect stream
         chunks = []
         async for chunk in self._connect_and_execute(input):
             chunks.append(chunk)
         return "".join([c.content for c in chunks])
 
-    def astream(self, input: str) -> AsyncIterator[BaseMessageChunk]:
+    def astream(self, input: str, chat_history: Optional[List[BaseMessage]] = None) -> AsyncIterator[BaseMessageChunk]:
         return self._connect_and_execute(input)

@@ -6,6 +6,7 @@ from loguru import logger
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.services.llm_service import LLMService
+from src.agents.base import BaseAgent
 from src.schemas.chat import ChatRequest, PureChatRequest
 from src.dao import message_dao
 from src.schemas.message import MessageCreateSchema
@@ -52,7 +53,7 @@ async def save_partial_response_task(conversation_id: int, content: str):
 
 
 async def stream_chat_response(
-    request: ChatRequest, llm_service: LLMService, db: AsyncSession
+    request: ChatRequest, agent: BaseAgent, db: AsyncSession
 ):
     """Handles the full chat logic with database interaction.
 
@@ -70,8 +71,8 @@ async def stream_chat_response(
         str: Server-Sent Events (SSE) formatted strings, either containing response
              chunks or the final [DONE] message.
     """
-    if not llm_service:
-        error_message = "LLM Service is not available."
+    if not agent:
+        error_message = "Agent is not available."
         logger.error(error_message)
         error_data = {
             "id": f"chatcmpl-error",
@@ -109,8 +110,8 @@ async def stream_chat_response(
     full_response_content = ""
     response_saved = False
     try:
-        # 3. Call the astream method on the service with history
-        llm_stream = llm_service.llm.astream(chat_history)
+        # 3. Call the astream method on the agent with history
+        llm_stream = agent.astream(request.message, chat_history=chat_history)
         
         # 4. Iterate over the stream with timeout protection (300 seconds = 5 minutes per chunk)
         stream_iter = llm_stream.__aiter__()
