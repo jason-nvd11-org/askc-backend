@@ -73,6 +73,10 @@ steps:
           --from-literal=GEMINI_API_KEY="$$(gcloud secrets versions access latest --secret=gemini-api-key --project=$PROJECT_ID)" \
           --from-literal=DEEPSEEK_API_KEY="$$(gcloud secrets versions access latest --secret=deepseek-api-key --project=$PROJECT_ID)" \
           --from-literal=MCP_GITHUB_TOKEN="$$(gcloud secrets versions access latest --secret=github-token-nvd11 --project=$PROJECT_ID)" \
+          --from-literal=LANGCHAIN_TRACING_V2="true" \
+          --from-literal=LANGCHAIN_PROJECT="${_APP_NAME}" \
+          --from-literal=LANGCHAIN_ENDPOINT="${_LANGCHAIN_ENDPOINT}" \
+          --from-literal=LANGCHAIN_API_KEY="$$(gcloud secrets versions access latest --secret=langsmith-api-key --project=$PROJECT_ID)" \
           --dry-run=client -o yaml | kubectl apply -f -
         
         # Fetch the Auth0 Client ID for docs from Secret Manager
@@ -95,3 +99,4 @@ substitutions:
   _APP_NAME: askc-bak-svc-dev
   _CLUSTER_NAME: my-cluster2
   _CLUSTER_LOCATION: europe-west2
+  _LANGCHAIN_ENDPOINT: "https://eu.api.smith.langchain.com"

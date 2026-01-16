@@ -98,6 +98,10 @@ async def stream_chat_response(
     
     history_from_db.reverse()
 
+    # Remove the last message if it matches the current request (duplicate prevention)
+    if history_from_db and history_from_db[-1]['role'] == 'user' and history_from_db[-1]['content'] == request.message:
+        history_from_db.pop()
+
     chat_history = []
     for msg in history_from_db:
         if msg['role'] == 'user':
