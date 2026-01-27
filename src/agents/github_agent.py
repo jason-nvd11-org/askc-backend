@@ -75,15 +75,21 @@ class GithubAgent(BaseAgent):
             final_chunk: AIMessageChunk | None = None
             
             # 1. Think (Stream LLM response)
-            async for chunk in llm_with_tools.astream(messages):
+            async for chunk in llm_with_tools.astream( ):
                 if not isinstance(chunk, AIMessageChunk):
                     continue
                 
                 if final_chunk is None:
                     final_chunk = chunk
                 else:
+                    # AIMessageChunk supports the `+` operator for merging.
+                    # This is due to Python's operator overloading (`__add__` method).
+                    # It intelligently combines content, tool_calls, and other metadata.
                     final_chunk += chunk
                 
+                # We yield the raw chunk to maintain a consistent data structure
+                # for the upstream consumer (e.g., ChatService), which expects
+                # BaseMessageChunk objects, not raw strings.
                 if chunk.content:
                     yield chunk
             
